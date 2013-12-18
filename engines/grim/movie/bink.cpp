@@ -54,29 +54,35 @@ bool BinkPlayer::loadFile(const Common::String &filename) {
 	// Windows/Mac versions have some fake SMUSH info at the beginning
 	// of the video. Weed it out here.
 	Common::SeekableReadStream *stream = SearchMan.createReadStreamForMember(_fname);
-	if (!stream)
-		return false;
-
-	char header[6];
-	stream->read(header, 5);
-	header[5] = 0;
-
-	if (strcmp(header, "SMUSH")) {
-		delete stream;
+	if (!stream) {
+		warning("BinkPlayer::loadFile(): Can't create stream for: %s", _fname.c_str());
 		return false;
 	}
 
-	// Try at 0x200 for the Bink header first
-	// If not there, assume at 0x400
-	stream->seek(0x200);
+	uint32 pos = 0xffffffff;
+
+	stream->seek(0x0);
 	uint32 tag = stream->readUint32BE();
+	if ((tag & 0xFFFFFF00) == MKTAG('B', 'I', 'K', 0)) {
+		pos = 0x0;
+	}
+	stream->seek(0x200);
+	tag = stream->readUint32BE();
+	if ((tag & 0xFFFFFF00) == MKTAG('B', 'I', 'K', 0)) {
+		pos = 0x200;
+	}
+	stream->seek(0x400);
+	tag = stream->readUint32BE();
+	if ((tag & 0xFFFFFF00) == MKTAG('B', 'I', 'K', 0)) {
+		pos = 0x400;
+	}
 
+	if (pos == 0xffffffff) {
+		warning("BinkPlayer::loadFile(): Could not find BINK header for: %s", _fname.c_str());
+		return false;
+	}
 	Common::SeekableReadStream *bink = 0;
-	if ((tag & 0xFFFFFF00) == MKTAG('B', 'I', 'K', 0))
-		bink = new Common::SeekableSubReadStream(stream, 0x200, stream->size(), DisposeAfterUse::YES);
-	else
-		bink = new Common::SeekableSubReadStream(stream, 0x400, stream->size(), DisposeAfterUse::YES);
-
+	bink = new Common::SeekableSubReadStream(stream, pos, stream->size(), DisposeAfterUse::YES);
 	return _videoDecoder->loadStream(bink);
 }
 
