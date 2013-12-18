@@ -120,6 +120,7 @@ public:
 	void drawMovieFrame(int offsetX, int offsetY);
 	void releaseMovieFrame();
 
+	void readPixels(int x, int y, int width, int height, char *buffer);
 	void createSpecialtyTextures();
 
 protected:
