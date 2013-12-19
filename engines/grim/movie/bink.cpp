@@ -79,6 +79,7 @@ bool BinkPlayer::loadFile(const Common::String &filename) {
 
 	if (pos == 0xffffffff) {
 		warning("BinkPlayer::loadFile(): Could not find BINK header for: %s", _fname.c_str());
+		delete stream;
 		return false;
 	}
 	Common::SeekableReadStream *bink = 0;
